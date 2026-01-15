@@ -91,11 +91,6 @@ canvas{
 
 <input id="upload" type="file" accept="image/*">
 
-<div class="row">
-<button id="generate">Generate</button>
-<button id="download" class="secondary" disabled>Download PNG</button>
-</div>
-
 <!-- OPTIONS -->
 <div class="row">
 <label>Style</label>
@@ -124,6 +119,12 @@ canvas{
 <div class="row">
 <label>Degrade (1–10)</label>
 <input id="degrade" type="range" min="1" max="10" value="2">
+</div>
+
+<!-- BUTTONS (moved below options) -->
+<div class="row">
+<button id="generate">Generate</button>
+<button id="download" class="secondary" disabled>Download PNG</button>
 </div>
 
 <div class="tiny" id="assetStatus">Loading assets…</div>
@@ -160,56 +161,88 @@ const degradeSlider = document.getElementById("degrade");
 
 let subjectImg = null;
 let ASSETS = { memes:[], snap:[], misc:[], textures:[] };
-let IMGS = [];
 let assetsReady = false;
 
 const rand = () => Math.random();
 
 const loadImage = src => new Promise((res,rej)=>{
-  const i=new Image();i.crossOrigin="anonymous";
-  i.onload=_=>res(i);i.onerror=_=>rej();i.src=src;
+  const i=new Image(); i.crossOrigin="anonymous";
+  i.onload=_=>res(i); i.onerror=_=>rej(); i.src=src;
 });
 
-/* ASSETS */
+/* LOAD ASSETS */
 (async ()=>{
   const res = await fetch("assets/manifest.json?"+Date.now());
   ASSETS = await res.json();
+  let count = 0;
   for(const k in ASSETS){
     for(const p of ASSETS[k]){
-      try{ IMGS.push(await loadImage(p)); }catch{}
+      try{ await loadImage(p); count++; }catch{}
     }
   }
-  assetsReady = IMGS.length>0;
-  assetCount.textContent = IMGS.length;
+  assetsReady = count>0;
+  assetCount.textContent = count;
   assetStatus.innerHTML = assetsReady
     ? "<span class='ok'>Assets loaded.</span>"
     : "<span class='warn'>No assets loaded.</span>";
 })();
 
+/* PICK POOL BY STYLE */
+function getPool(){
+  const s = styleSel.value;
+  if(s==="memes") return ASSETS.memes;
+  if(s==="snap") return ASSETS.snap;
+  if(s==="trends") return [...ASSETS.misc, ...ASSETS.textures];
+  return [...ASSETS.memes, ...ASSETS.snap, ...ASSETS.misc, ...ASSETS.textures];
+}
+
+/* DEGRADE */
+function degradeCanvas(level){
+  const scale = 1 - level*0.05;
+  const w = Math.max(64, canvas.width*scale);
+  const h = Math.max(64, canvas.height*scale);
+
+  const t = document.createElement("canvas");
+  t.width=w; t.height=h;
+  const tctx=t.getContext("2d");
+  tctx.imageSmoothingEnabled=false;
+  tctx.drawImage(canvas,0,0,w,h);
+
+  ctx.imageSmoothingEnabled=false;
+  ctx.clearRect(0,0,1024,1024);
+  ctx.drawImage(t,0,0,w,h,0,0,1024,1024);
+  ctx.imageSmoothingEnabled=true;
+
+  const q = Math.max(0.15,1-level*0.08);
+  const img = new Image();
+  img.src = canvas.toDataURL("image/jpeg",q);
+  ctx.clearRect(0,0,1024,1024);
+  img.onload=()=>ctx.drawImage(img,0,0);
+}
+
 /* RENDER */
-function render(){
+async function render(){
   if(!subjectImg || !assetsReady) return;
   ctx.clearRect(0,0,1024,1024);
-
   ctx.fillStyle="#0b121c";
   ctx.fillRect(0,0,1024,1024);
 
   ctx.drawImage(subjectImg,128,128,768,768);
 
-  const cx=512,cy=512;
-  const innerR=320,outerR=500;
-
-  const chaos=chaosSel.value;
+  const pool = getPool();
+  const chaos = chaosSel.value;
   const count = chaos==="low"?8:chaos==="high"?20:14;
 
+  const cx=512, cy=512, innerR=320, outerR=500;
+
   for(let i=0;i<count;i++){
-    const img=IMGS[Math.floor(rand()*IMGS.length)];
-    const angle=rand()*Math.PI*2;
-    const r=innerR+rand()*(outerR-innerR);
-    const w=120+rand()*180;
-    const h=w*(img.height/img.width);
-    const x=cx+Math.cos(angle)*r-w/2;
-    const y=cy+Math.sin(angle)*r-h/2;
+    const img = await loadImage(pool[Math.floor(rand()*pool.length)]);
+    const angle = rand()*Math.PI*2;
+    const r = innerR + rand()*(outerR-innerR);
+    const w = 120 + rand()*180;
+    const h = w*(img.height/img.width);
+    const x = cx + Math.cos(angle)*r - w/2;
+    const y = cy + Math.sin(angle)*r - h/2;
 
     ctx.save();
     ctx.globalAlpha=0.4+rand()*0.6;
@@ -219,8 +252,6 @@ function render(){
     ctx.restore();
   }
 
-  const d=degradeSlider.value/10;
-  ctx.globalAlpha=1;
   ctx.font="900 86px Impact";
   ctx.textAlign="center";
   ctx.strokeStyle="#000";
@@ -229,11 +260,12 @@ function render(){
   ctx.strokeText(captionInput.value,512,960);
   ctx.fillText(captionInput.value,512,960);
 
+  degradeCanvas(+degradeSlider.value);
   download.disabled=false;
 }
 
 upload.onchange=async e=>{
-  subjectImg=await loadImage(URL.createObjectURL(e.target.files[0]));
+  subjectImg = await loadImage(URL.createObjectURL(e.target.files[0]));
   render();
 };
 generate.onclick=render;
