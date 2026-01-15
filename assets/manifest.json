@@ -1,6 +1,27 @@
 {
-  "memes": [],
-  "snap": [],
+  "memes": [
+    "assets/memes/cashmeoutside.png",
+    "assets/memes/cavebob.png",
+    "assets/memes/daniel.png",
+    "assets/memes/datboi.png",
+    "assets/memes/evilkermit.png",
+    "assets/memes/harambe.png",
+    "assets/memes/kermit1.png",
+    "assets/memes/kermit2.png",
+    "assets/memes/lilpump.png",
+    "assets/memes/lilyachty.png",
+    "assets/memes/pepe.png",
+    "assets/memes/pepedab.png",
+    "assets/memes/sponge.png"
+  ],
+  "snap": [
+    "assets/snap/dogfilter.png"
+  ],
   "textures": [],
-  "misc": []
+  "misc": [
+    "assets/misc/arthurfist.png",
+    "assets/misc/bottleflip.png",
+    "assets/misc/pokemongo.png",
+    "assets/misc/soundcloud.png"
+  ]
 }
