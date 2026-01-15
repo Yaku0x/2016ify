@@ -46,12 +46,14 @@ body{
   font-size:12px;border-bottom:1px solid var(--line)
 }
 .content{padding:14px}
-input,button{
+input,select,button{
   width:100%;background:#0b121c;border:1px solid var(--line);
-  color:var(--ink);padding:12px;border-radius:12px;font-family:var(--mono)
+  color:var(--ink);padding:10px;border-radius:12px;font-family:var(--mono)
 }
 button{cursor:pointer;text-transform:uppercase}
 button.secondary{border-color:rgba(255,102,204,.4)}
+.row{margin-top:10px}
+label{font-size:11px;color:var(--muted)}
 .canvasWrap{padding:14px;display:flex;flex-direction:column;align-items:center}
 canvas{
   width:100%;max-width:720px;aspect-ratio:1/1;
@@ -82,12 +84,48 @@ canvas{
 </div>
 
 <div class="grid">
+
 <div class="panel">
 <h3>Generator</h3>
 <div class="content">
+
 <input id="upload" type="file" accept="image/*">
+
+<div class="row">
 <button id="generate">Generate</button>
 <button id="download" class="secondary" disabled>Download PNG</button>
+</div>
+
+<!-- OPTIONS -->
+<div class="row">
+<label>Style</label>
+<select id="style">
+  <option value="mixed" selected>Mixed</option>
+  <option value="memes">Memes</option>
+  <option value="snap">Snapchat</option>
+  <option value="trends">Trends</option>
+</select>
+</div>
+
+<div class="row">
+<label>Chaos</label>
+<select id="chaos">
+  <option value="low">Low</option>
+  <option value="med" selected>Medium</option>
+  <option value="high">High</option>
+</select>
+</div>
+
+<div class="row">
+<label>Caption</label>
+<input id="caption" value="2026 IS THE NEW 2016">
+</div>
+
+<div class="row">
+<label>Degrade (1–10)</label>
+<input id="degrade" type="range" min="1" max="10" value="2">
+</div>
+
 <div class="tiny" id="assetStatus">Loading assets…</div>
 </div>
 </div>
@@ -102,12 +140,11 @@ canvas{
 </div>
 </div>
 </div>
-</div>
 
+</div>
 </div>
 
 <script>
-/* ================= CORE ================= */
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 const upload = document.getElementById("upload");
@@ -115,6 +152,11 @@ const generate = document.getElementById("generate");
 const download = document.getElementById("download");
 const assetStatus = document.getElementById("assetStatus");
 const assetCount = document.getElementById("assetCount");
+
+const styleSel = document.getElementById("style");
+const chaosSel = document.getElementById("chaos");
+const captionInput = document.getElementById("caption");
+const degradeSlider = document.getElementById("degrade");
 
 let subjectImg = null;
 let ASSETS = { memes:[], snap:[], misc:[], textures:[] };
@@ -124,88 +166,78 @@ let assetsReady = false;
 const rand = () => Math.random();
 
 const loadImage = src => new Promise((res,rej)=>{
-  const i = new Image();
-  i.crossOrigin="anonymous";
-  i.onload=_=>res(i);
-  i.onerror=_=>rej();
-  i.src=src;
+  const i=new Image();i.crossOrigin="anonymous";
+  i.onload=_=>res(i);i.onerror=_=>rej();i.src=src;
 });
 
-/* =============== ASSET LOAD =============== */
+/* ASSETS */
 (async ()=>{
-  try{
-    const res = await fetch("assets/manifest.json?"+Date.now());
-    ASSETS = await res.json();
-    for(const k in ASSETS){
-      for(const p of ASSETS[k]){
-        try{ IMGS.push(await loadImage(p)); }catch{}
-      }
+  const res = await fetch("assets/manifest.json?"+Date.now());
+  ASSETS = await res.json();
+  for(const k in ASSETS){
+    for(const p of ASSETS[k]){
+      try{ IMGS.push(await loadImage(p)); }catch{}
     }
-    assetsReady = IMGS.length > 0;
-    assetCount.textContent = IMGS.length;
-    assetStatus.innerHTML = assetsReady
-      ? "<span class='ok'>Assets loaded.</span>"
-      : "<span class='warn'>No assets loaded.</span>";
-  }catch(e){
-    assetStatus.innerHTML = "<span class='warn'>Manifest failed.</span>";
   }
+  assetsReady = IMGS.length>0;
+  assetCount.textContent = IMGS.length;
+  assetStatus.innerHTML = assetsReady
+    ? "<span class='ok'>Assets loaded.</span>"
+    : "<span class='warn'>No assets loaded.</span>";
 })();
 
-/* =============== RENDER =================== */
+/* RENDER */
 function render(){
   if(!subjectImg || !assetsReady) return;
-
   ctx.clearRect(0,0,1024,1024);
 
-  // background noise
   ctx.fillStyle="#0b121c";
   ctx.fillRect(0,0,1024,1024);
 
-  // subject
-  ctx.drawImage(subjectImg, 128,128,768,768);
+  ctx.drawImage(subjectImg,128,128,768,768);
 
-  // ring keep-out
-  const cx=512, cy=512;
-  const innerR = 320;
-  const outerR = 500;
+  const cx=512,cy=512;
+  const innerR=320,outerR=500;
 
-  for(let i=0;i<14;i++){
-    const img = IMGS[Math.floor(rand()*IMGS.length)];
-    const angle = rand()*Math.PI*2;
-    const r = innerR + rand()*(outerR-innerR);
-    const w = 120 + rand()*180;
-    const h = w * (img.height/img.width);
+  const chaos=chaosSel.value;
+  const count = chaos==="low"?8:chaos==="high"?20:14;
 
-    const x = cx + Math.cos(angle)*r - w/2;
-    const y = cy + Math.sin(angle)*r - h/2;
+  for(let i=0;i<count;i++){
+    const img=IMGS[Math.floor(rand()*IMGS.length)];
+    const angle=rand()*Math.PI*2;
+    const r=innerR+rand()*(outerR-innerR);
+    const w=120+rand()*180;
+    const h=w*(img.height/img.width);
+    const x=cx+Math.cos(angle)*r-w/2;
+    const y=cy+Math.sin(angle)*r-h/2;
 
     ctx.save();
-    ctx.globalAlpha = 0.5 + rand()*0.5;
+    ctx.globalAlpha=0.4+rand()*0.6;
     ctx.translate(x+w/2,y+h/2);
     ctx.rotate((rand()-0.5)*1.2);
     ctx.drawImage(img,-w/2,-h/2,w,h);
     ctx.restore();
   }
 
-  // caption
+  const d=degradeSlider.value/10;
+  ctx.globalAlpha=1;
   ctx.font="900 86px Impact";
   ctx.textAlign="center";
-  ctx.fillStyle="#fff";
   ctx.strokeStyle="#000";
+  ctx.fillStyle="#fff";
   ctx.lineWidth=8;
-  ctx.strokeText("2026 IS THE NEW 2016",512,960);
-  ctx.fillText("2026 IS THE NEW 2016",512,960);
+  ctx.strokeText(captionInput.value,512,960);
+  ctx.fillText(captionInput.value,512,960);
 
   download.disabled=false;
 }
 
-/* =============== EVENTS ================== */
-upload.onchange = async e=>{
-  subjectImg = await loadImage(URL.createObjectURL(e.target.files[0]));
+upload.onchange=async e=>{
+  subjectImg=await loadImage(URL.createObjectURL(e.target.files[0]));
   render();
 };
-generate.onclick = render;
-download.onclick = ()=>{
+generate.onclick=render;
+download.onclick=()=>{
   const a=document.createElement("a");
   a.download="2016ify.png";
   a.href=canvas.toDataURL();
