@@ -17,10 +17,10 @@
     "assets/memes/lil-peep.png"
   ],
   "snap": [
-    "assets/snap/dogfilter.png"
-    "assets/snap/flowercrown.png"
-    "assets/snap/hearts.png"
-    "assets/snap/rainbow.png"
+    "assets/snap/dogfilter.png",
+    "assets/snap/flowercrown.png",
+    "assets/snap/hearts.png",
+    "assets/snap/rainbow.png",
     "assets/snap/snapchatlogo.png"
   ],
   "textures": [],
