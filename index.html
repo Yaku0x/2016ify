@@ -35,7 +35,6 @@
       padding: 16px;
     }
 
-    /* Header */
     .topbar{
       display:flex;
       align-items:center;
@@ -70,7 +69,6 @@
       letter-spacing: 0;
     }
 
-    /* Layout */
     .grid{
       display:grid;
       grid-template-columns: 380px 1fr;
@@ -100,7 +98,6 @@
     }
     .content{ padding: 14px; }
 
-    /* Controls */
     .label{
       font-family: var(--mono);
       font-size: 12px;
@@ -175,7 +172,6 @@
     }
     .two{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-    /* Preview */
     .canvasWrap{
       padding: 14px;
       display:flex;
@@ -209,6 +205,8 @@
       color: var(--muted);
       line-height: 1.35;
       margin-top: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .warn{ color: #ffd7a1; }
     .ok{ color: #b9ffb9; }
@@ -305,9 +303,9 @@
 
 <script>
 /* ============================================================================
-  2016ify — User-first widget (GitHub Pages ready)
-  Assets load from: /assets/manifest.json
-  Put overlay PNGs inside /assets/* folders and list them in manifest.json.
+  2016ify — GitHub Pages + Custom Domain safe
+  - Loads assets from manifest.json
+  - Resolves paths correctly no matter what URL the site is hosted under
 ============================================================================ */
 
 const els = {
@@ -324,6 +322,7 @@ const els = {
   assetCount: document.getElementById("assetCount"),
   modeLabel: document.getElementById("modeLabel"),
 };
+
 const ctx = els.canvas.getContext("2d", { willReadFrequently: true });
 
 let subjectImg = null;
@@ -332,6 +331,7 @@ let ASSET_IMGS = { memes: [], snap: [], textures: [], misc: [] };
 let assetsReady = false;
 let lastSeed = Math.random();
 
+// Keep captions dumb and 2016-ish
 const CAPTIONS = [
   "DAMN.",
   "BACK AT IT AGAIN",
@@ -349,6 +349,11 @@ const CAPTIONS = [
 function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
 function rand(seed){ seed.v = (seed.v * 1664525 + 1013904223) >>> 0; return seed.v / 4294967296; }
 function pick(seed, arr){ return arr[Math.floor(rand(seed) * arr.length)]; }
+
+function resolveUrl(path){
+  // resolves relative paths safely for any hosting base
+  return new URL(path, window.location.href).toString();
+}
 
 function loadImage(src){
   return new Promise((resolve, reject) => {
@@ -430,7 +435,6 @@ function drawMemeText(text, seed, y, size){
   ctx.strokeText(text, W/2, y);
   ctx.fillText(text, W/2, y);
 
-  // tiny jitter shadow
   const jx = (rand(seed)-0.5) * 6;
   const jy = (rand(seed)-0.5) * 6;
   ctx.fillStyle = "rgba(0,0,0,0.22)";
@@ -438,12 +442,15 @@ function drawMemeText(text, seed, y, size){
   ctx.restore();
 }
 
-// -------------------- Asset loading (manifest.json)
+// -------------------- Asset loading
 async function loadManifest(){
-  // Bust cache so updates show instantly on GitHub Pages
-  const url = "assets/manifest.json?v=" + Date.now();
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error("manifest.json missing or blocked");
+  // cache bust so GitHub Pages updates show instantly
+  const url = new URL("assets/manifest.json", window.location.href);
+  url.searchParams.set("v", Date.now());
+
+  const res = await fetch(url.toString(), { cache: "no-store" });
+  if (!res.ok) throw new Error("manifest.json missing (HTTP " + res.status + ")");
+
   const json = await res.json();
   const keys = ["memes","snap","textures","misc"];
   for (const k of keys) ASSETS[k] = Array.isArray(json[k]) ? json[k] : [];
@@ -451,82 +458,90 @@ async function loadManifest(){
 
 async function preloadAssets(){
   const keys = ["memes","snap","textures","misc"];
+  const failures = [];
+
   for (const k of keys){
     ASSET_IMGS[k] = [];
     for (const path of ASSETS[k]){
       try{
-        const img = await loadImage(path);
+        const abs = resolveUrl(path);
+        const img = await loadImage(abs);
         ASSET_IMGS[k].push(img);
       } catch(e){
-        // ignore broken paths, but you should fix manifest if this happens
+        failures.push(path);
       }
     }
   }
+
   const total = keys.reduce((sum,k)=>sum + ASSET_IMGS[k].length, 0);
-  els.assetCount.textContent = total.toString();
-  return total;
+  els.assetCount.textContent = String(total);
+
+  return { total, failures };
 }
 
 async function initAssets(){
   try{
     await loadManifest();
-    const total = await preloadAssets();
+    const { total, failures } = await preloadAssets();
     assetsReady = total > 0;
-    els.assetStatus.innerHTML = assetsReady
-      ? `<span class="ok">Assets loaded.</span> Upload an image and generate.`
-      : `<span class="warn">No assets loaded.</span> Check /assets/manifest.json paths.`;
+
+    if (assetsReady){
+      els.assetStatus.innerHTML =
+        `<span class="ok">Assets loaded (${total}).</span> Upload an image and generate.`;
+      if (failures.length){
+        // show first few bad paths so you can spot name mismatches
+        els.assetStatus.textContent += `\nMissing/broken paths (first 5):\n- ${failures.slice(0,5).join("\n- ")}`;
+      }
+    } else {
+      els.assetStatus.innerHTML =
+        `<span class="warn">No assets loaded.</span>\nYour manifest exists, but every image path failed.\nCheck spelling + .png + folder names.`;
+    }
+
   } catch(e){
     assetsReady = false;
-    els.assetStatus.innerHTML = `<span class="warn">Assets not loading.</span> Make sure /assets/manifest.json exists in your repo.`;
     els.assetCount.textContent = "0";
+    els.assetStatus.innerHTML =
+      `<span class="warn">Assets not loading.</span>\n` +
+      `Tried: ${resolveUrl("assets/manifest.json")}\n` +
+      `Error: ${e.message}`;
   }
 }
 
-// -------------------- Composition engine
+// -------------------- Composition engine (same as your version)
 function rectsOverlap(a,b){
   return !(a.x+a.w < b.x || b.x+b.w < a.x || a.y+a.h < b.y || b.y+b.h < a.y);
 }
-
 function placeInZone(seed, zone, w, h){
-  // zone: {x,y,w,h}
   const x = zone.x + rand(seed) * Math.max(1, zone.w - w);
   const y = zone.y + rand(seed) * Math.max(1, zone.h - h);
   return { x, y, w, h };
 }
-
 function getZones(W,H){
-  // “anchored zones” around edges/corners for more intentional compositions
   const pad = Math.floor(W * 0.04);
   const z = [];
-  // corners
-  z.push({ x: pad, y: pad, w: W*0.28, h: H*0.28 });                      // TL
-  z.push({ x: W - pad - W*0.28, y: pad, w: W*0.28, h: H*0.28 });         // TR
-  z.push({ x: pad, y: H - pad - H*0.28, w: W*0.28, h: H*0.28 });         // BL
-  z.push({ x: W - pad - W*0.28, y: H - pad - H*0.28, w: W*0.28, h: H*0.28 }); // BR
-  // edges
-  z.push({ x: W*0.18, y: pad, w: W*0.64, h: H*0.16 });                   // Top band
-  z.push({ x: W*0.18, y: H - pad - H*0.16, w: W*0.64, h: H*0.16 });       // Bottom band
-  z.push({ x: pad, y: H*0.18, w: W*0.16, h: H*0.64 });                    // Left band
-  z.push({ x: W - pad - W*0.16, y: H*0.18, w: W*0.16, h: H*0.64 });       // Right band
+  z.push({ x: pad, y: pad, w: W*0.28, h: H*0.28 });
+  z.push({ x: W - pad - W*0.28, y: pad, w: W*0.28, h: H*0.28 });
+  z.push({ x: pad, y: H - pad - H*0.28, w: W*0.28, h: H*0.28 });
+  z.push({ x: W - pad - W*0.28, y: H - pad - H*0.28, w: W*0.28, h: H*0.28 });
+  z.push({ x: W*0.18, y: pad, w: W*0.64, h: H*0.16 });
+  z.push({ x: W*0.18, y: H - pad - H*0.16, w: W*0.64, h: H*0.16 });
+  z.push({ x: pad, y: H*0.18, w: W*0.16, h: H*0.64 });
+  z.push({ x: W - pad - W*0.16, y: H*0.18, w: W*0.16, h: H*0.64 });
   return z;
 }
-
 function biasBuckets(bias){
   if (bias === "memes") return ["memes","memes","snap","misc"];
   if (bias === "snap")  return ["snap","snap","memes","misc"];
   if (bias === "sound") return ["textures","memes","snap","textures"];
   return ["memes","snap","misc","textures"];
 }
-
 function resolveCounts(chaos){
   if (chaos === "low")  return { big: 1, med: 4, small: 4, textures: 1, q: 0.55, pix: 0.22 };
   if (chaos === "high") return { big: 2, med: 6, small: 8, textures: 3, q: 0.28, pix: 0.11 };
   return { big: 2, med: 5, small: 6, textures: 2, q: 0.40, pix: 0.16 };
 }
-
 function drawBase(seed){
   const W = els.canvas.width, H = els.canvas.height;
-
   const g = ctx.createLinearGradient(0,0,W,H);
   g.addColorStop(0, "rgba(30,40,60,1)");
   g.addColorStop(1, "rgba(10,14,20,1)");
@@ -541,14 +556,11 @@ function drawBase(seed){
 
   noiseLayer(seed, 0.06);
 }
-
 function drawSubject(seed, avatarType){
   const W = els.canvas.width, H = els.canvas.height;
   const scale = (avatarType === "human") ? 0.70 : 0.78;
-
   const boxW = W * scale;
   const boxH = H * scale;
-
   const rot = (rand(seed)-0.5) * 0.05;
 
   ctx.save();
@@ -561,25 +573,18 @@ function drawSubject(seed, avatarType){
   ctx.filter = `blur(${blur}px) contrast(${contrast}) saturate(${sat})`;
 
   const fit = fitCover(subjectImg.width, subjectImg.height, boxW, boxH);
-  ctx.drawImage(
-    subjectImg,
-    -boxW/2 + fit.x, -boxH/2 + fit.y,
-    fit.w, fit.h
-  );
+  ctx.drawImage(subjectImg, -boxW/2 + fit.x, -boxH/2 + fit.y, fit.w, fit.h);
 
   ctx.restore();
   ctx.filter = "none";
 
-  // safe zone to protect subject readability
-  const safe = {
+  return {
     x: W*0.5 - boxW*0.42,
     y: H*0.5 - boxH*0.42,
     w: boxW*0.84,
     h: boxH*0.84
   };
-  return safe;
 }
-
 function drawOverlayImg(img, x, y, w, h, rot, alpha, filter){
   ctx.save();
   ctx.translate(x + w/2, y + h/2);
@@ -590,7 +595,6 @@ function drawOverlayImg(img, x, y, w, h, rot, alpha, filter){
   ctx.restore();
   ctx.filter = "none";
 }
-
 function pickImageFromBucket(seed, bucket){
   const arr = ASSET_IMGS[bucket] || [];
   if (!arr.length) return null;
@@ -599,7 +603,6 @@ function pickImageFromBucket(seed, bucket){
 
 async function render(seedValue){
   const W = els.canvas.width, H = els.canvas.height;
-
   ctx.clearRect(0,0,W,H);
 
   if (!subjectImg){
@@ -632,65 +635,50 @@ async function render(seedValue){
 
   els.modeLabel.textContent = `${chaos} / ${bias}`;
 
-  // Base
   drawBase(seed);
-
-  // Subject
   const safeZone = drawSubject(seed, atype);
 
   const counts = resolveCounts(chaos);
   const buckets = biasBuckets(bias);
   const zones = getZones(W,H);
 
-  // Placement bookkeeping
-  const placed = [];
-  placed.push(safeZone); // treat safe zone like a “no-go” rect
+  const placed = [ safeZone ];
 
-  function tryPlace(img, targetW, targetH){
-    // Try multiple attempts across multiple zones; reject if overlaps safe zone too much
+  function tryPlace(targetW, targetH){
     for (let attempt=0; attempt<40; attempt++){
       const zone = pick(seed, zones);
       const r = placeInZone(seed, zone, targetW, targetH);
 
-      // allow SOME overlap with other overlays (chaos), but avoid massive collisions
-      let bad = false;
       let overlaps = 0;
-
       for (const p of placed){
         if (rectsOverlap(r, p)){
           overlaps++;
-          // safe zone overlap: hard reject
-          if (p === safeZone) { bad = true; break; }
+          if (p === safeZone) { overlaps = 999; break; }
         }
       }
-      if (bad) continue;
+      if (overlaps >= 999) continue;
 
-      // too many overlaps with existing overlays = reject
       const overlapLimit = (chaos === "high") ? 3 : (chaos === "mid" ? 2 : 1);
       if (overlaps > overlapLimit) continue;
 
       placed.push(r);
       return r;
     }
-    // fallback: just put it somewhere near an edge
     const r = { x: 20 + rand(seed)*80, y: 20 + rand(seed)*80, w: targetW, h: targetH };
     placed.push(r);
     return r;
   }
 
-  // Build a list of “overlay intents” with size hierarchy
   const intents = [];
   for (let i=0; i<counts.big; i++) intents.push({ tier:"big" });
   for (let i=0; i<counts.med; i++) intents.push({ tier:"med" });
   for (let i=0; i<counts.small; i++) intents.push({ tier:"small" });
 
-  // Shuffle intents
   for (let i=intents.length-1; i>0; i--){
     const j = Math.floor(rand(seed)*(i+1));
     [intents[i], intents[j]] = [intents[j], intents[i]];
   }
 
-  // Draw overlays with “intent” (more AI-feeling composition)
   for (const it of intents){
     const bucket = pick(seed, buckets);
     const img = pickImageFromBucket(seed, bucket) || pickImageFromBucket(seed, "misc");
@@ -701,14 +689,12 @@ async function render(seedValue){
       it.tier === "med" ? (0.22 + rand(seed)*0.14) :
                           (0.14 + rand(seed)*0.10);
 
-    // scale by canvas
     const targetW = Math.floor(W * baseScale);
     const aspect = img.height / img.width;
     const targetH = Math.floor(targetW * aspect);
 
-    const r = tryPlace(img, targetW, targetH);
+    const r = tryPlace(targetW, targetH);
 
-    // style: some are sharper/uglier
     const rot = (rand(seed)-0.5) * (it.tier === "big" ? 0.55 : 0.85);
     const alpha = (it.tier === "big") ? (0.75 + rand(seed)*0.25) : (0.55 + rand(seed)*0.35);
     const filt = (rand(seed) < 0.30) ? "contrast(1.25) saturate(1.25)" : "none";
@@ -716,7 +702,6 @@ async function render(seedValue){
     drawOverlayImg(img, r.x, r.y, r.w, r.h, rot, alpha, filt);
   }
 
-  // Texture overlays (top layer)
   for (let i=0; i<counts.textures; i++){
     const img = pickImageFromBucket(seed, "textures");
     if (!img) continue;
@@ -732,7 +717,6 @@ async function render(seedValue){
     drawOverlayImg(img, x, y, w, h, rot, alpha, "none");
   }
 
-  // Caption
   if (captionMode === "on"){
     const text = (captionText ? captionText : pick(seed, CAPTIONS)).toUpperCase();
     const whereTop = rand(seed) < 0.50;
@@ -740,7 +724,6 @@ async function render(seedValue){
     drawMemeText(text, seed, y, 86);
   }
 
-  // “Repost damage”
   const { q, pix } = counts;
   pixelate(pix);
   await jpegCrush(clamp(q, 0.15, 0.85));
@@ -772,7 +755,6 @@ els.download.addEventListener("click", () => {
   a.click();
 });
 
-// Live re-render when options change (only if user opened “More”)
 ["chaos","bias","atype","captionMode"].forEach(id => {
   els[id].addEventListener("change", async () => {
     if (!subjectImg) return;
@@ -787,7 +769,6 @@ els.captionText.addEventListener("input", async () => {
 // Boot
 (async function(){
   await initAssets();
-  // empty state
   ctx.fillStyle = "#0b121c";
   ctx.fillRect(0,0,els.canvas.width, els.canvas.height);
   ctx.fillStyle = "rgba(230,240,255,0.7)";
@@ -798,3 +779,4 @@ els.captionText.addEventListener("input", async () => {
 </script>
 </body>
 </html>
+
