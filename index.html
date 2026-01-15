@@ -67,20 +67,24 @@ canvas{
 .tiny{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:pre-wrap}
 .ok{color:#b9ffb9}.warn{color:#ffd7a1}
 
-/* footer links */
-.footer-note{
-  margin-top:14px;
+/* --- Added: footer note + links (SAFE, no JS changes) --- */
+.footerNote{
+  width:100%;
+  max-width:720px;
+  margin-top:12px;
   font-family:var(--mono);
   font-size:11px;
   color:var(--muted);
   text-align:center;
+  line-height:1.35;
 }
-.footer-note a{
+.footerNote a{
   color:var(--ink);
   text-decoration:none;
+  border-bottom:1px dotted rgba(230,240,255,.35);
 }
-.footer-note a:hover{
-  text-decoration:underline;
+.footerNote a:hover{
+  border-bottom-color:rgba(230,240,255,.75);
 }
 </style>
 </head>
@@ -107,6 +111,7 @@ canvas{
 
 <input id="upload" type="file" accept="image/*">
 
+<!-- OPTIONS -->
 <div class="row">
 <label>Style</label>
 <select id="style">
@@ -136,6 +141,7 @@ canvas{
 <input id="degrade" type="range" min="1" max="10" value="2">
 </div>
 
+<!-- BUTTONS (moved below options) -->
 <div class="row">
 <button id="generate">Generate</button>
 <button id="download" class="secondary" disabled>Download PNG</button>
@@ -154,12 +160,12 @@ canvas{
 <div>Assets: <b id="assetCount">—</b></div>
 </div>
 
-<!-- FOOTER TEXT -->
-<div class="footer-note">
+<!-- Added: footer text + links (ONLY HTML, safe) -->
+<div class="footerNote">
   2016ify is powered by
-  <a href="https://dexscreener.com/solana/5n8zsoqhwhsvjvn8bklkjdxxtp5f5jah9igg8bdmmmsb" target="_blank" rel="noopener">$2016</a>.
+  <a href="https://dexscreener.com/solana/5n8zsoqhwhsvjvn8bklkjdxxtp5f5jah9igg8bdmmmsb" target="_blank" rel="noopener noreferrer">$2016</a>.
   Widget made by:
-  <a href="https://x.com/0xYaku" target="_blank" rel="noopener">Yaku0x</a>
+  <a href="https://x.com/0xYaku" target="_blank" rel="noopener noreferrer">Yaku0x</a>
 </div>
 
 </div>
@@ -169,7 +175,135 @@ canvas{
 </div>
 
 <script>
-/* JS UNCHANGED — your working version exactly */
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+const upload = document.getElementById("upload");
+const generate = document.getElementById("generate");
+const download = document.getElementById("download");
+const assetStatus = document.getElementById("assetStatus");
+const assetCount = document.getElementById("assetCount");
+
+const styleSel = document.getElementById("style");
+const chaosSel = document.getElementById("chaos");
+const captionInput = document.getElementById("caption");
+const degradeSlider = document.getElementById("degrade");
+
+let subjectImg = null;
+let ASSETS = { memes:[], snap:[], misc:[], textures:[] };
+let assetsReady = false;
+
+const rand = () => Math.random();
+
+const loadImage = src => new Promise((res,rej)=>{
+  const i=new Image(); i.crossOrigin="anonymous";
+  i.onload=_=>res(i); i.onerror=_=>rej(); i.src=src;
+});
+
+/* LOAD ASSETS */
+(async ()=>{
+  const res = await fetch("assets/manifest.json?"+Date.now());
+  ASSETS = await res.json();
+  let count = 0;
+  for(const k in ASSETS){
+    for(const p of ASSETS[k]){
+      try{ await loadImage(p); count++; }catch{}
+    }
+  }
+  assetsReady = count>0;
+  assetCount.textContent = count;
+  assetStatus.innerHTML = assetsReady
+    ? "<span class='ok'>Assets loaded.</span>"
+    : "<span class='warn'>No assets loaded.</span>";
+})();
+
+/* PICK POOL BY STYLE */
+function getPool(){
+  const s = styleSel.value;
+  if(s==="memes") return ASSETS.memes;
+  if(s==="snap") return ASSETS.snap;
+  if(s==="trends") return [...ASSETS.misc, ...ASSETS.textures];
+  return [...ASSETS.memes, ...ASSETS.snap, ...ASSETS.misc, ...ASSETS.textures];
+}
+
+/* DEGRADE */
+function degradeCanvas(level){
+  const scale = 1 - level*0.05;
+  const w = Math.max(64, canvas.width*scale);
+  const h = Math.max(64, canvas.height*scale);
+
+  const t = document.createElement("canvas");
+  t.width=w; t.height=h;
+  const tctx=t.getContext("2d");
+  tctx.imageSmoothingEnabled=false;
+  tctx.drawImage(canvas,0,0,w,h);
+
+  ctx.imageSmoothingEnabled=false;
+  ctx.clearRect(0,0,1024,1024);
+  ctx.drawImage(t,0,0,w,h,0,0,1024,1024);
+  ctx.imageSmoothingEnabled=true;
+
+  const q = Math.max(0.15,1-level*0.08);
+  const img = new Image();
+  img.src = canvas.toDataURL("image/jpeg",q);
+  ctx.clearRect(0,0,1024,1024);
+  img.onload=()=>ctx.drawImage(img,0,0);
+}
+
+/* RENDER */
+async function render(){
+  if(!subjectImg || !assetsReady) return;
+  ctx.clearRect(0,0,1024,1024);
+  ctx.fillStyle="#0b121c";
+  ctx.fillRect(0,0,1024,1024);
+
+  ctx.drawImage(subjectImg,128,128,768,768);
+
+  const pool = getPool();
+  const chaos = chaosSel.value;
+  const count = chaos==="low"?8:chaos==="high"?20:14;
+
+  const cx=512, cy=512, innerR=320, outerR=500;
+
+  for(let i=0;i<count;i++){
+    const img = await loadImage(pool[Math.floor(rand()*pool.length)]);
+    const angle = rand()*Math.PI*2;
+    const r = innerR + rand()*(outerR-innerR);
+    const w = 120 + rand()*180;
+    const h = w*(img.height/img.width);
+    const x = cx + Math.cos(angle)*r - w/2;
+    const y = cy + Math.sin(angle)*r - h/2;
+
+    ctx.save();
+    ctx.globalAlpha=0.4+rand()*0.6;
+    ctx.translate(x+w/2,y+h/2);
+    ctx.rotate((rand()-0.5)*1.2);
+    ctx.drawImage(img,-w/2,-h/2,w,h);
+    ctx.restore();
+  }
+
+  ctx.font="900 86px Impact";
+  ctx.textAlign="center";
+  ctx.strokeStyle="#000";
+  ctx.fillStyle="#fff";
+  ctx.lineWidth=8;
+  ctx.strokeText(captionInput.value,512,960);
+  ctx.fillText(captionInput.value,512,960);
+
+  degradeCanvas(+degradeSlider.value);
+  download.disabled=false;
+}
+
+upload.onchange=async e=>{
+  subjectImg = await loadImage(URL.createObjectURL(e.target.files[0]));
+  render();
+};
+generate.onclick=render;
+download.onclick=()=>{
+  const a=document.createElement("a");
+  a.download="2016ify.png";
+  a.href=canvas.toDataURL();
+  a.click();
+};
 </script>
 </body>
 </html>
