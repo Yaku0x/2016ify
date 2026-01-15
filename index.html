@@ -1,782 +1,216 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>2016ify</title>
-  <style>
-    :root{
-      --bg:#0b0f14;
-      --panel:#0f1621;
-      --ink:#e6f0ff;
-      --muted:#98a6b8;
-      --line:#223044;
-      --accent:#6cf;
-      --accent2:#f6c;
-      --shadow: 0 10px 30px rgba(0,0,0,.45);
-      --radius: 14px;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      min-height:100vh;
-      background:
-        radial-gradient(900px 400px at 20% 0%, rgba(102,204,255,.12), transparent 60%),
-        radial-gradient(900px 400px at 80% 20%, rgba(255,102,204,.10), transparent 60%),
-        linear-gradient(180deg, #06080c, #0b0f14 45%, #070a0f);
-      color:var(--ink);
-      font-family:var(--sans);
-    }
-    .wrap{
-      max-width: 1100px;
-      margin: 22px auto;
-      padding: 16px;
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2016ify</title>
 
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-      padding: 14px 16px;
-      background: rgba(15,22,33,.85);
-      border:1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(6px);
-    }
-    .brand{
-      display:flex; flex-direction:column; gap:4px;
-      font-family: var(--mono);
-      letter-spacing: .3px;
-      text-transform: uppercase;
-    }
-    .brand .title{ font-size: 14px; display:flex; align-items:center; gap:10px; }
-    .chip{
-      font-size: 11px;
-      color: var(--bg);
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-weight: 800;
-    }
-    .brand .sub{
-      font-size: 12px;
-      color: var(--muted);
-      text-transform:none;
-      letter-spacing: 0;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 380px 1fr;
-      gap: 16px;
-      margin-top: 16px;
-    }
-    @media (max-width: 980px){
-      .grid{ grid-template-columns: 1fr; }
-    }
-
-    .panel{
-      background: rgba(15,22,33,.85);
-      border:1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .panel h3{
-      margin:0;
-      padding: 12px 14px;
-      font-family: var(--mono);
-      font-size: 12px;
-      letter-spacing: .4px;
-      text-transform: uppercase;
-      border-bottom: 1px solid var(--line);
-      background: rgba(10,14,20,.65);
-    }
-    .content{ padding: 14px; }
-
-    .label{
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-    input[type="file"]{
-      width:100%;
-      background:#0b121c;
-      border:1px solid var(--line);
-      color: var(--ink);
-      padding: 14px 12px;
-      border-radius: 12px;
-      outline:none;
-      font-family: var(--mono);
-      font-size: 12px;
-    }
-    .btn{
-      width:100%;
-      padding: 14px 12px;
-      border-radius: 14px;
-      border:1px solid rgba(102,204,255,.35);
-      background: linear-gradient(180deg, rgba(102,204,255,.18), rgba(102,204,255,.06));
-      color:var(--ink);
-      font-family: var(--mono);
-      letter-spacing:.2px;
-      text-transform: uppercase;
-      font-size: 12px;
-      cursor:pointer;
-      box-shadow: 0 10px 25px rgba(0,0,0,.25);
-    }
-    .btn:hover{ border-color: rgba(255,102,204,.40); }
-    .btn.secondary{
-      border:1px solid rgba(255,102,204,.35);
-      background: linear-gradient(180deg, rgba(255,102,204,.16), rgba(255,102,204,.06));
-    }
-    .row{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    details.more{
-      margin-top: 12px;
-      border:1px solid rgba(152,166,184,.22);
-      background: rgba(11,18,28,.55);
-      border-radius: 12px;
-      overflow:hidden;
-    }
-    details.more summary{
-      cursor:pointer;
-      padding: 10px 12px;
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--muted);
-      list-style:none;
-      user-select:none;
-    }
-    details.more summary::-webkit-details-marker { display:none; }
-    .moreInner{ padding: 12px; border-top:1px solid rgba(152,166,184,.15); }
-    select, input[type="text"]{
-      width:100%;
-      background:#0b121c;
-      border:1px solid var(--line);
-      color: var(--ink);
-      padding: 10px 10px;
-      border-radius: 12px;
-      outline:none;
-      font-family: var(--mono);
-      font-size: 12px;
-    }
-    .two{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-    .canvasWrap{
-      padding: 14px;
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-      align-items:center;
-    }
-    canvas{
-      width: 100%;
-      max-width: 720px;
-      aspect-ratio: 1 / 1;
-      border-radius: 16px;
-      border: 1px solid rgba(102,204,255,.25);
-      background: #0b121c;
-      box-shadow: 0 12px 40px rgba(0,0,0,.45);
-    }
-    .status{
-      width:100%;
-      max-width: 720px;
-      display:flex;
-      justify-content:space-between;
-      gap: 10px;
-      font-family: var(--mono);
-      color: var(--muted);
-      font-size: 11px;
-    }
-    .status b{ color: var(--ink); }
-    .tiny{
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.35;
-      margin-top: 10px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .warn{ color: #ffd7a1; }
-    .ok{ color: #b9ffb9; }
-  </style>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#0f1621; --ink:#e6f0ff; --muted:#98a6b8;
+  --line:#223044; --accent:#6cf; --accent2:#f6c;
+  --shadow:0 10px 30px rgba(0,0,0,.45); --radius:14px;
+  --mono:ui-monospace,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;color:var(--ink);font-family:var(--sans);
+  background:
+    radial-gradient(900px 400px at 20% 0%, rgba(102,204,255,.12), transparent 60%),
+    radial-gradient(900px 400px at 80% 20%, rgba(255,102,204,.10), transparent 60%),
+    linear-gradient(180deg,#06080c,#0b0f14 45%,#070a0f);
+}
+.wrap{max-width:1100px;margin:22px auto;padding:16px}
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 16px;background:rgba(15,22,33,.85);
+  border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);backdrop-filter:blur(6px)
+}
+.brand{font-family:var(--mono);text-transform:uppercase}
+.brand .title{font-size:14px}
+.brand .sub{font-size:12px;color:var(--muted)}
+.chip{
+  font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));color:#000
+}
+.grid{display:grid;grid-template-columns:380px 1fr;gap:16px;margin-top:16px}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+.panel{
+  background:rgba(15,22,33,.85);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow)
+}
+.panel h3{
+  margin:0;padding:12px 14px;font-family:var(--mono);
+  font-size:12px;border-bottom:1px solid var(--line)
+}
+.content{padding:14px}
+input,button{
+  width:100%;background:#0b121c;border:1px solid var(--line);
+  color:var(--ink);padding:12px;border-radius:12px;font-family:var(--mono)
+}
+button{cursor:pointer;text-transform:uppercase}
+button.secondary{border-color:rgba(255,102,204,.4)}
+.canvasWrap{padding:14px;display:flex;flex-direction:column;align-items:center}
+canvas{
+  width:100%;max-width:720px;aspect-ratio:1/1;
+  border-radius:16px;background:#0b121c;
+  border:1px solid rgba(102,204,255,.25)
+}
+.status{
+  width:100%;max-width:720px;display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:11px;color:var(--muted)
+}
+.tiny{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:pre-wrap}
+.ok{color:#b9ffb9}.warn{color:#ffd7a1}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="brand">
-        <div class="title">2016ify <span class="chip">BETA</span></div>
-        <div class="sub">Upload → Generate → Download. No accounts. No cringe.</div>
-      </div>
-      <div class="brand" style="align-items:flex-end;">
-        <div class="title">1:1 OUTPUT</div>
-        <div class="sub">1024×1024</div>
-      </div>
-    </div>
+<div class="wrap">
 
-    <div class="grid">
-      <div class="panel">
-        <h3>Generator</h3>
-        <div class="content">
-          <div class="label">Upload avatar / selfie</div>
-          <input id="upload" type="file" accept="image/*" />
-
-          <div class="row">
-            <button id="generate" class="btn">Generate</button>
-            <button id="download" class="btn secondary" disabled>Download PNG</button>
-          </div>
-
-          <details class="more">
-            <summary>More options (optional)</summary>
-            <div class="moreInner">
-              <div class="two">
-                <div>
-                  <div class="label">Chaos</div>
-                  <select id="chaos">
-                    <option value="low">Low</option>
-                    <option value="mid" selected>Medium</option>
-                    <option value="high">Unhinged</option>
-                  </select>
-                </div>
-                <div>
-                  <div class="label">Era bias</div>
-                  <select id="bias">
-                    <option value="mixed" selected>Mixed</option>
-                    <option value="memes">Memes</option>
-                    <option value="snap">Snapchat</option>
-                    <option value="sound">SoundCloud</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="two" style="margin-top:10px;">
-                <div>
-                  <div class="label">Avatar type</div>
-                  <select id="atype">
-                    <option value="mascot" selected>Mascot / Avatar</option>
-                    <option value="human">Human selfie</option>
-                  </select>
-                </div>
-                <div>
-                  <div class="label">Caption</div>
-                  <select id="captionMode">
-                    <option value="on" selected>On</option>
-                    <option value="off">Off</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style="margin-top:10px;">
-                <div class="label">Custom caption (optional)</div>
-                <input id="captionText" type="text" placeholder="leave blank for random..." />
-              </div>
-            </div>
-          </details>
-
-          <div class="tiny" id="assetStatus">Loading assets…</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Preview</h3>
-        <div class="canvasWrap">
-          <canvas id="c" width="1024" height="1024"></canvas>
-          <div class="status">
-            <div>Mode: <b id="modeLabel">—</b></div>
-            <div>Assets: <b id="assetCount">—</b></div>
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="topbar">
+  <div class="brand">
+    <div class="title">2016ify <span class="chip">BETA</span></div>
+    <div class="sub">Upload → Generate → Download</div>
   </div>
+  <div class="brand" style="text-align:right">
+    <div class="title">1:1 OUTPUT</div>
+    <div class="sub">1024×1024</div>
+  </div>
+</div>
+
+<div class="grid">
+<div class="panel">
+<h3>Generator</h3>
+<div class="content">
+<input id="upload" type="file" accept="image/*">
+<button id="generate">Generate</button>
+<button id="download" class="secondary" disabled>Download PNG</button>
+<div class="tiny" id="assetStatus">Loading assets…</div>
+</div>
+</div>
+
+<div class="panel">
+<h3>Preview</h3>
+<div class="canvasWrap">
+<canvas id="c" width="1024" height="1024"></canvas>
+<div class="status">
+<div>Mode: <b>Ring</b></div>
+<div>Assets: <b id="assetCount">—</b></div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
 
 <script>
-/* ============================================================================
-  2016ify — GitHub Pages + Custom Domain safe
-  - Loads assets from manifest.json
-  - Resolves paths correctly no matter what URL the site is hosted under
-============================================================================ */
-
-const els = {
-  upload: document.getElementById("upload"),
-  generate: document.getElementById("generate"),
-  download: document.getElementById("download"),
-  chaos: document.getElementById("chaos"),
-  bias: document.getElementById("bias"),
-  atype: document.getElementById("atype"),
-  captionMode: document.getElementById("captionMode"),
-  captionText: document.getElementById("captionText"),
-  canvas: document.getElementById("c"),
-  assetStatus: document.getElementById("assetStatus"),
-  assetCount: document.getElementById("assetCount"),
-  modeLabel: document.getElementById("modeLabel"),
-};
-
-const ctx = els.canvas.getContext("2d", { willReadFrequently: true });
+/* ================= CORE ================= */
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+const upload = document.getElementById("upload");
+const generate = document.getElementById("generate");
+const download = document.getElementById("download");
+const assetStatus = document.getElementById("assetStatus");
+const assetCount = document.getElementById("assetCount");
 
 let subjectImg = null;
-let ASSETS = { memes: [], snap: [], textures: [], misc: [] };
-let ASSET_IMGS = { memes: [], snap: [], textures: [], misc: [] };
+let ASSETS = { memes:[], snap:[], misc:[], textures:[] };
+let IMGS = [];
 let assetsReady = false;
-let lastSeed = Math.random();
 
-// Keep captions dumb and 2016-ish
-const CAPTIONS = [
-  "DAMN.",
-  "BACK AT IT AGAIN",
-  "HERE COME DAT BOI",
-  "HOW BOW DAH",
-  "DON'T @ ME",
-  "LOWKEY…",
-  "IT REALLY BE LIKE THAT",
-  "BRUH MOMENT",
-  "NO THOUGHTS HEAD EMPTY",
-  "V I B E S",
-];
+const rand = () => Math.random();
 
-// -------------------- Utils
-function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
-function rand(seed){ seed.v = (seed.v * 1664525 + 1013904223) >>> 0; return seed.v / 4294967296; }
-function pick(seed, arr){ return arr[Math.floor(rand(seed) * arr.length)]; }
+const loadImage = src => new Promise((res,rej)=>{
+  const i = new Image();
+  i.crossOrigin="anonymous";
+  i.onload=_=>res(i);
+  i.onerror=_=>rej();
+  i.src=src;
+});
 
-function resolveUrl(path){
-  // resolves relative paths safely for any hosting base
-  return new URL(path, window.location.href).toString();
-}
-
-function loadImage(src){
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("Failed to load " + src));
-    img.src = src;
-  });
-}
-
-function fitCover(srcW, srcH, dstW, dstH){
-  const srcRatio = srcW / srcH;
-  const dstRatio = dstW / dstH;
-  let w, h, x, y;
-  if (srcRatio > dstRatio){
-    h = dstH;
-    w = h * srcRatio;
-    x = (dstW - w) / 2;
-    y = 0;
-  } else {
-    w = dstW;
-    h = w / srcRatio;
-    x = 0;
-    y = (dstH - h) / 2;
-  }
-  return { x, y, w, h };
-}
-
-function noiseLayer(seed, amount){
-  const W = els.canvas.width, H = els.canvas.height;
-  const img = ctx.getImageData(0,0,W,H);
-  const d = img.data;
-  for (let i=0; i<d.length; i+=4){
-    const n = (rand(seed)-0.5) * 255 * amount;
-    d[i]   = clamp(d[i] + n, 0, 255);
-    d[i+1] = clamp(d[i+1] + n, 0, 255);
-    d[i+2] = clamp(d[i+2] + n, 0, 255);
-  }
-  ctx.putImageData(img, 0, 0);
-}
-
-function pixelate(amount){
-  const W = els.canvas.width, H = els.canvas.height;
-  const s = clamp(amount, 0.06, 1);
-  const w2 = Math.max(48, Math.floor(W * s));
-  const h2 = Math.max(48, Math.floor(H * s));
-
-  const tmp = document.createElement("canvas");
-  tmp.width = w2; tmp.height = h2;
-  const tctx = tmp.getContext("2d");
-  tctx.imageSmoothingEnabled = false;
-  tctx.drawImage(els.canvas, 0,0,w2,h2);
-
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0,0,W,H);
-  ctx.drawImage(tmp, 0,0,w2,h2, 0,0,W,H);
-  ctx.imageSmoothingEnabled = true;
-}
-
-function jpegCrush(quality){
-  const W = els.canvas.width, H = els.canvas.height;
-  const dataURL = els.canvas.toDataURL("image/jpeg", quality);
-  return loadImage(dataURL).then(img => {
-    ctx.clearRect(0,0,W,H);
-    ctx.drawImage(img, 0,0,W,H);
-  });
-}
-
-function drawMemeText(text, seed, y, size){
-  const W = els.canvas.width;
-  ctx.save();
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = `900 ${size}px Impact, Haettenschweiler, 'Arial Black', sans-serif`;
-  ctx.lineWidth = Math.max(6, size * 0.10);
-  ctx.strokeStyle = "rgba(0,0,0,0.95)";
-  ctx.fillStyle = "rgba(255,255,255,0.98)";
-  ctx.strokeText(text, W/2, y);
-  ctx.fillText(text, W/2, y);
-
-  const jx = (rand(seed)-0.5) * 6;
-  const jy = (rand(seed)-0.5) * 6;
-  ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.fillText(text, W/2 + jx, y + jy);
-  ctx.restore();
-}
-
-// -------------------- Asset loading
-async function loadManifest(){
-  // cache bust so GitHub Pages updates show instantly
-  const url = new URL("assets/manifest.json", window.location.href);
-  url.searchParams.set("v", Date.now());
-
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) throw new Error("manifest.json missing (HTTP " + res.status + ")");
-
-  const json = await res.json();
-  const keys = ["memes","snap","textures","misc"];
-  for (const k of keys) ASSETS[k] = Array.isArray(json[k]) ? json[k] : [];
-}
-
-async function preloadAssets(){
-  const keys = ["memes","snap","textures","misc"];
-  const failures = [];
-
-  for (const k of keys){
-    ASSET_IMGS[k] = [];
-    for (const path of ASSETS[k]){
-      try{
-        const abs = resolveUrl(path);
-        const img = await loadImage(abs);
-        ASSET_IMGS[k].push(img);
-      } catch(e){
-        failures.push(path);
-      }
-    }
-  }
-
-  const total = keys.reduce((sum,k)=>sum + ASSET_IMGS[k].length, 0);
-  els.assetCount.textContent = String(total);
-
-  return { total, failures };
-}
-
-async function initAssets(){
+/* =============== ASSET LOAD =============== */
+(async ()=>{
   try{
-    await loadManifest();
-    const { total, failures } = await preloadAssets();
-    assetsReady = total > 0;
-
-    if (assetsReady){
-      els.assetStatus.innerHTML =
-        `<span class="ok">Assets loaded (${total}).</span> Upload an image and generate.`;
-      if (failures.length){
-        // show first few bad paths so you can spot name mismatches
-        els.assetStatus.textContent += `\nMissing/broken paths (first 5):\n- ${failures.slice(0,5).join("\n- ")}`;
+    const res = await fetch("assets/manifest.json?"+Date.now());
+    ASSETS = await res.json();
+    for(const k in ASSETS){
+      for(const p of ASSETS[k]){
+        try{ IMGS.push(await loadImage(p)); }catch{}
       }
-    } else {
-      els.assetStatus.innerHTML =
-        `<span class="warn">No assets loaded.</span>\nYour manifest exists, but every image path failed.\nCheck spelling + .png + folder names.`;
     }
-
-  } catch(e){
-    assetsReady = false;
-    els.assetCount.textContent = "0";
-    els.assetStatus.innerHTML =
-      `<span class="warn">Assets not loading.</span>\n` +
-      `Tried: ${resolveUrl("assets/manifest.json")}\n` +
-      `Error: ${e.message}`;
+    assetsReady = IMGS.length > 0;
+    assetCount.textContent = IMGS.length;
+    assetStatus.innerHTML = assetsReady
+      ? "<span class='ok'>Assets loaded.</span>"
+      : "<span class='warn'>No assets loaded.</span>";
+  }catch(e){
+    assetStatus.innerHTML = "<span class='warn'>Manifest failed.</span>";
   }
-}
-
-// -------------------- Composition engine (same as your version)
-function rectsOverlap(a,b){
-  return !(a.x+a.w < b.x || b.x+b.w < a.x || a.y+a.h < b.y || b.y+b.h < a.y);
-}
-function placeInZone(seed, zone, w, h){
-  const x = zone.x + rand(seed) * Math.max(1, zone.w - w);
-  const y = zone.y + rand(seed) * Math.max(1, zone.h - h);
-  return { x, y, w, h };
-}
-function getZones(W,H){
-  const pad = Math.floor(W * 0.04);
-  const z = [];
-  z.push({ x: pad, y: pad, w: W*0.28, h: H*0.28 });
-  z.push({ x: W - pad - W*0.28, y: pad, w: W*0.28, h: H*0.28 });
-  z.push({ x: pad, y: H - pad - H*0.28, w: W*0.28, h: H*0.28 });
-  z.push({ x: W - pad - W*0.28, y: H - pad - H*0.28, w: W*0.28, h: H*0.28 });
-  z.push({ x: W*0.18, y: pad, w: W*0.64, h: H*0.16 });
-  z.push({ x: W*0.18, y: H - pad - H*0.16, w: W*0.64, h: H*0.16 });
-  z.push({ x: pad, y: H*0.18, w: W*0.16, h: H*0.64 });
-  z.push({ x: W - pad - W*0.16, y: H*0.18, w: W*0.16, h: H*0.64 });
-  return z;
-}
-function biasBuckets(bias){
-  if (bias === "memes") return ["memes","memes","snap","misc"];
-  if (bias === "snap")  return ["snap","snap","memes","misc"];
-  if (bias === "sound") return ["textures","memes","snap","textures"];
-  return ["memes","snap","misc","textures"];
-}
-function resolveCounts(chaos){
-  if (chaos === "low")  return { big: 1, med: 4, small: 4, textures: 1, q: 0.55, pix: 0.22 };
-  if (chaos === "high") return { big: 2, med: 6, small: 8, textures: 3, q: 0.28, pix: 0.11 };
-  return { big: 2, med: 5, small: 6, textures: 2, q: 0.40, pix: 0.16 };
-}
-function drawBase(seed){
-  const W = els.canvas.width, H = els.canvas.height;
-  const g = ctx.createLinearGradient(0,0,W,H);
-  g.addColorStop(0, "rgba(30,40,60,1)");
-  g.addColorStop(1, "rgba(10,14,20,1)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,W,H);
-
-  const vg = ctx.createRadialGradient(W*0.5,H*0.5, W*0.2, W*0.5,H*0.5, W*0.72);
-  vg.addColorStop(0,"rgba(0,0,0,0)");
-  vg.addColorStop(1,"rgba(0,0,0,0.55)");
-  ctx.fillStyle = vg;
-  ctx.fillRect(0,0,W,H);
-
-  noiseLayer(seed, 0.06);
-}
-function drawSubject(seed, avatarType){
-  const W = els.canvas.width, H = els.canvas.height;
-  const scale = (avatarType === "human") ? 0.70 : 0.78;
-  const boxW = W * scale;
-  const boxH = H * scale;
-  const rot = (rand(seed)-0.5) * 0.05;
-
-  ctx.save();
-  ctx.translate(W/2, H/2);
-  ctx.rotate(rot);
-
-  const blur = (avatarType === "human") ? 0.7 : 0.2;
-  const contrast = (avatarType === "human") ? 1.05 : 1.12;
-  const sat = (avatarType === "human") ? 1.05 : 1.15;
-  ctx.filter = `blur(${blur}px) contrast(${contrast}) saturate(${sat})`;
-
-  const fit = fitCover(subjectImg.width, subjectImg.height, boxW, boxH);
-  ctx.drawImage(subjectImg, -boxW/2 + fit.x, -boxH/2 + fit.y, fit.w, fit.h);
-
-  ctx.restore();
-  ctx.filter = "none";
-
-  return {
-    x: W*0.5 - boxW*0.42,
-    y: H*0.5 - boxH*0.42,
-    w: boxW*0.84,
-    h: boxH*0.84
-  };
-}
-function drawOverlayImg(img, x, y, w, h, rot, alpha, filter){
-  ctx.save();
-  ctx.translate(x + w/2, y + h/2);
-  ctx.rotate(rot);
-  ctx.globalAlpha = alpha;
-  ctx.filter = filter || "none";
-  ctx.drawImage(img, -w/2, -h/2, w, h);
-  ctx.restore();
-  ctx.filter = "none";
-}
-function pickImageFromBucket(seed, bucket){
-  const arr = ASSET_IMGS[bucket] || [];
-  if (!arr.length) return null;
-  return pick(seed, arr);
-}
-
-async function render(seedValue){
-  const W = els.canvas.width, H = els.canvas.height;
-  ctx.clearRect(0,0,W,H);
-
-  if (!subjectImg){
-    ctx.fillStyle = "#0b121c";
-    ctx.fillRect(0,0,W,H);
-    ctx.fillStyle = "rgba(230,240,255,0.7)";
-    ctx.font = "700 20px ui-monospace, Menlo, Monaco, Consolas, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("Upload an image first.", W/2, H/2);
-    return;
-  }
-
-  if (!assetsReady){
-    ctx.fillStyle = "#0b121c";
-    ctx.fillRect(0,0,W,H);
-    ctx.fillStyle = "rgba(230,240,255,0.7)";
-    ctx.font = "700 18px ui-monospace, Menlo, Monaco, Consolas, monospace";
-    ctx.textAlign = "center";
-    ctx.fillText("Assets not loaded. Check assets/manifest.json", W/2, H/2);
-    return;
-  }
-
-  const seed = { v: (Math.floor(seedValue * 4294967296) >>> 0) };
-
-  const chaos = els.chaos.value;
-  const bias = els.bias.value;
-  const atype = els.atype.value;
-  const captionMode = els.captionMode.value;
-  const captionText = els.captionText.value.trim();
-
-  els.modeLabel.textContent = `${chaos} / ${bias}`;
-
-  drawBase(seed);
-  const safeZone = drawSubject(seed, atype);
-
-  const counts = resolveCounts(chaos);
-  const buckets = biasBuckets(bias);
-  const zones = getZones(W,H);
-
-  const placed = [ safeZone ];
-
-  function tryPlace(targetW, targetH){
-    for (let attempt=0; attempt<40; attempt++){
-      const zone = pick(seed, zones);
-      const r = placeInZone(seed, zone, targetW, targetH);
-
-      let overlaps = 0;
-      for (const p of placed){
-        if (rectsOverlap(r, p)){
-          overlaps++;
-          if (p === safeZone) { overlaps = 999; break; }
-        }
-      }
-      if (overlaps >= 999) continue;
-
-      const overlapLimit = (chaos === "high") ? 3 : (chaos === "mid" ? 2 : 1);
-      if (overlaps > overlapLimit) continue;
-
-      placed.push(r);
-      return r;
-    }
-    const r = { x: 20 + rand(seed)*80, y: 20 + rand(seed)*80, w: targetW, h: targetH };
-    placed.push(r);
-    return r;
-  }
-
-  const intents = [];
-  for (let i=0; i<counts.big; i++) intents.push({ tier:"big" });
-  for (let i=0; i<counts.med; i++) intents.push({ tier:"med" });
-  for (let i=0; i<counts.small; i++) intents.push({ tier:"small" });
-
-  for (let i=intents.length-1; i>0; i--){
-    const j = Math.floor(rand(seed)*(i+1));
-    [intents[i], intents[j]] = [intents[j], intents[i]];
-  }
-
-  for (const it of intents){
-    const bucket = pick(seed, buckets);
-    const img = pickImageFromBucket(seed, bucket) || pickImageFromBucket(seed, "misc");
-    if (!img) continue;
-
-    const baseScale =
-      it.tier === "big" ? (0.36 + rand(seed)*0.18) :
-      it.tier === "med" ? (0.22 + rand(seed)*0.14) :
-                          (0.14 + rand(seed)*0.10);
-
-    const targetW = Math.floor(W * baseScale);
-    const aspect = img.height / img.width;
-    const targetH = Math.floor(targetW * aspect);
-
-    const r = tryPlace(targetW, targetH);
-
-    const rot = (rand(seed)-0.5) * (it.tier === "big" ? 0.55 : 0.85);
-    const alpha = (it.tier === "big") ? (0.75 + rand(seed)*0.25) : (0.55 + rand(seed)*0.35);
-    const filt = (rand(seed) < 0.30) ? "contrast(1.25) saturate(1.25)" : "none";
-
-    drawOverlayImg(img, r.x, r.y, r.w, r.h, rot, alpha, filt);
-  }
-
-  for (let i=0; i<counts.textures; i++){
-    const img = pickImageFromBucket(seed, "textures");
-    if (!img) continue;
-
-    const s = 1.05 + rand(seed)*0.25;
-    const w = Math.floor(W * s);
-    const h = Math.floor(H * s);
-    const x = Math.floor((W - w)/2 + (rand(seed)-0.5)*20);
-    const y = Math.floor((H - h)/2 + (rand(seed)-0.5)*20);
-    const rot = (rand(seed)-0.5)*0.08;
-    const alpha = 0.12 + rand(seed)*0.25;
-
-    drawOverlayImg(img, x, y, w, h, rot, alpha, "none");
-  }
-
-  if (captionMode === "on"){
-    const text = (captionText ? captionText : pick(seed, CAPTIONS)).toUpperCase();
-    const whereTop = rand(seed) < 0.50;
-    const y = whereTop ? 70 : (H - 70);
-    drawMemeText(text, seed, y, 86);
-  }
-
-  const { q, pix } = counts;
-  pixelate(pix);
-  await jpegCrush(clamp(q, 0.15, 0.85));
-  noiseLayer(seed, 0.04);
-
-  els.download.disabled = false;
-}
-
-// -------------------- Events
-els.upload.addEventListener("change", async (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  subjectImg = await loadImage(url);
-  lastSeed = Math.random();
-  await render(lastSeed);
-});
-
-els.generate.addEventListener("click", async () => {
-  if (!subjectImg) return;
-  lastSeed = Math.random();
-  await render(lastSeed);
-});
-
-els.download.addEventListener("click", () => {
-  const a = document.createElement("a");
-  a.download = "2016ify.png";
-  a.href = els.canvas.toDataURL("image/png");
-  a.click();
-});
-
-["chaos","bias","atype","captionMode"].forEach(id => {
-  els[id].addEventListener("change", async () => {
-    if (!subjectImg) return;
-    await render(lastSeed);
-  });
-});
-els.captionText.addEventListener("input", async () => {
-  if (!subjectImg) return;
-  await render(lastSeed);
-});
-
-// Boot
-(async function(){
-  await initAssets();
-  ctx.fillStyle = "#0b121c";
-  ctx.fillRect(0,0,els.canvas.width, els.canvas.height);
-  ctx.fillStyle = "rgba(230,240,255,0.7)";
-  ctx.font = "700 20px ui-monospace, Menlo, Monaco, Consolas, monospace";
-  ctx.textAlign = "center";
-  ctx.fillText("Upload an avatar/selfie to start.", els.canvas.width/2, els.canvas.height/2);
 })();
+
+/* =============== RENDER =================== */
+function render(){
+  if(!subjectImg || !assetsReady) return;
+
+  ctx.clearRect(0,0,1024,1024);
+
+  // background noise
+  ctx.fillStyle="#0b121c";
+  ctx.fillRect(0,0,1024,1024);
+
+  // subject
+  ctx.drawImage(subjectImg, 128,128,768,768);
+
+  // ring keep-out
+  const cx=512, cy=512;
+  const innerR = 320;
+  const outerR = 500;
+
+  for(let i=0;i<14;i++){
+    const img = IMGS[Math.floor(rand()*IMGS.length)];
+    const angle = rand()*Math.PI*2;
+    const r = innerR + rand()*(outerR-innerR);
+    const w = 120 + rand()*180;
+    const h = w * (img.height/img.width);
+
+    const x = cx + Math.cos(angle)*r - w/2;
+    const y = cy + Math.sin(angle)*r - h/2;
+
+    ctx.save();
+    ctx.globalAlpha = 0.5 + rand()*0.5;
+    ctx.translate(x+w/2,y+h/2);
+    ctx.rotate((rand()-0.5)*1.2);
+    ctx.drawImage(img,-w/2,-h/2,w,h);
+    ctx.restore();
+  }
+
+  // caption
+  ctx.font="900 86px Impact";
+  ctx.textAlign="center";
+  ctx.fillStyle="#fff";
+  ctx.strokeStyle="#000";
+  ctx.lineWidth=8;
+  ctx.strokeText("2026 IS THE NEW 2016",512,960);
+  ctx.fillText("2026 IS THE NEW 2016",512,960);
+
+  download.disabled=false;
+}
+
+/* =============== EVENTS ================== */
+upload.onchange = async e=>{
+  subjectImg = await loadImage(URL.createObjectURL(e.target.files[0]));
+  render();
+};
+generate.onclick = render;
+download.onclick = ()=>{
+  const a=document.createElement("a");
+  a.download="2016ify.png";
+  a.href=canvas.toDataURL();
+  a.click();
+};
 </script>
 </body>
 </html>
-
